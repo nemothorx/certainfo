@@ -30,7 +30,7 @@ esac
 do_chainget() {
     # get info from each cert in a chain
     # md5 fingerprint is for fetchmail needs, otherwise it defaults to SHA1
-    awk 'BEGIN { pipe="openssl x509 -noout -subject -dates -serial -fingerprint -md5  -issuer"}
+    awk 'BEGIN { pipe="openssl x509 -noout -subject -dates -serial -fingerprint -md5 -ext subjectAltName -issuer"}
       /BEGIN CERT/ { count++ ; printf count".\n" }
       /^-+BEGIN CERT/,/^-+END CERT/ { print | pipe }
       /^-+END CERT/                 { close(pipe)  }'
@@ -41,7 +41,7 @@ echo "Generated on: $(date)"
 echo ""
 
 echo "## Certificates"
-openssl s_client -connect $host:$port -servername $host -showcerts </dev/null 2>/dev/null | do_chainget | awk '{ if (/=/) { printf "        " } ; { print } }'
+openssl s_client -connect $host:$port -servername $host -showcerts </dev/null 2>/dev/null | do_chainget | awk '{ if (!/\.$/) { printf "        " } ; { print } }'
 
 echo ""
 
