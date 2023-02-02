@@ -7,6 +7,11 @@ if [ -z "$1" ] ; then
     exit 1
 fi
 
+if [ $1 == "-v" ] ; then
+    verbose=true
+    shift
+fi
+
 certat=${1:-help}
 port=${2:-443}
 
@@ -80,19 +85,21 @@ else
 
     echo ""
 
-    # extra info for some ports
-    case $port in
-        443)
-            echo "# Additional info"
-            echo ""
+    if [ "$verbose" == "true" ] ; then
+        # extra info for some ports
+        case $port in
+            443)
+                echo "# Additional info"
+                echo ""
 
-            echo "## HTTP headers"
-            echo ""
-            curl -s -k -I http://$certat/ | sed -e 's/^/    /g'
+                echo "## HTTP headers"
+                echo ""
+                curl -s -k -I http://$certat/ | sed -e 's/^/    /g'
 
-            echo "## HTTPS headers"
-            echo ""
-            curl -s -k -I https://$certat:$port/ | sed -e 's/^/    /g'
-            ;;
-    esac
+                echo "## HTTPS headers"
+                echo ""
+                curl -s -k -I https://$certat:$port/ | sed -e 's/^/    /g'
+                ;;
+        esac
+    fi
 fi
