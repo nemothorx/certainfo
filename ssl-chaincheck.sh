@@ -55,7 +55,7 @@ if [ -e ${certat} ] ; then
     echo "# Cert inspection of file: ${certat}"
     echo "Generated on: $(date)"
     echo ""
-    cat "$certat" | do_chainget | awk '{ if (!/\.$/) { printf "        " } ; { print } }'
+    cat "$certat" | do_chainget 2>/dev/null | awk '{ if (!/\.$/) { printf "        " } ; { print } }' | fmt -s
     echo ""
     echo "# Additional info"
     echo ""
@@ -81,7 +81,7 @@ else
     echo ""
     echo "## Certificates"
     echo ""
-    openssl s_client -connect $certat:$port -servername $certat $extopts -showcerts </dev/null 2>/dev/null | do_chainget | awk '{ if (!/\.$/) { printf "        " } ; { print } }'
+    openssl s_client -connect $certat:$port -servername $certat $extopts -showcerts </dev/null 2>/dev/null | do_chainget 2>/dev/null | awk '{ if (!/\.$/) { printf "        " } ; { print } }' | fmt -s 
 
     echo ""
 
