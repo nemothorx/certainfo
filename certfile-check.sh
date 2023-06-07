@@ -40,4 +40,17 @@ cat $1 | awk '
     {
         if (length(out))out=out RS $0
     }
-    '  | awk '{ if (!/\.$/) { printf "        " } ; { print } }' | fmt -s
+    '  | awk '
+    BEGIN {
+        fmt="fmt -s"
+    }
+    {
+        if ( (!/\.$/) && (!/DNS/) ) {
+            printf "        "
+        }
+        if (/DNS/) {
+                printf "        " $0 | fmt ; close(fmt)
+        } else {
+            print
+        }
+    }'
