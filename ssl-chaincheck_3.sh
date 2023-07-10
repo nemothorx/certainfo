@@ -12,7 +12,7 @@ do_chainget() {
 			pipe="openssl x509 -noout -text -serial -fingerprint -md5 -dates -certopt no_header,no_version,no_serial,no_signame,no_validity,no_pubkey,no_sigdump" 
 		} 
       /^-+BEGIN CERT/,/^-+END CERT/ { print | pipe }
-      /^-+END CERT/                 { close(pipe) ; printf "\n~\n" } ' | grep -E 'Issuer:|Subject:|DNS:|^[a-z0-9A-Z~]' | sed -e 's/^\s*//g' # we just blat the data out with '~' being cert delimiter
+      /^-+END CERT/                 { close(pipe) ; printf "\n~\n" } ' 2>/dev/null | grep -E 'Issuer:|Subject:|DNS:|^[a-z0-9A-Z~]' | sed -e 's/^\s*//g' # we just blat the data out with '~' being cert delimiter
 }
 
 do_mkpretty() {
@@ -26,7 +26,7 @@ do_mkpretty() {
 			if ( /serial=/ ) { serial=$0 }
 			if ( /MD5 Fingerprint=/ ) { md5=$0 }
 			if ( /Issuer:/ ) { issuer=$0 }
-			if ( /~/ ) { 
+			if ( /^~$/ ) { 
 				count++
 				printf "\n"count".\n"subject"\n"dns"\n"notbefore"\n"notafter"\n"serial"\n"md5"\n"issuer"\n"
 				dns=""
