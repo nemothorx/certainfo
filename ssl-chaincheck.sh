@@ -65,7 +65,7 @@ else
     # we're loading cert from online:
     echo "# Cert inspection of URI: $certat:$port"
     case $port in
-        25) 
+        25|587) 
             extopts="-starttls smtp" 
             ;;
         110)
@@ -81,7 +81,7 @@ else
     echo ""
     echo "## Certificates"
     echo ""
-    openssl s_client -connect $certat:$port -servername $certat $extopts -showcerts </dev/null 2>/dev/null | do_chainget 2>/dev/null | awk '{ if (!/\.$/) { printf "        " } ; { print } }' # | fmt -s 
+    openssl s_client -connect $certat:$port -servername $certat $extopts -showcerts </dev/null 2>/dev/null | do_chainget 2>/dev/null | awk '{ if (!/\.$/) { printf "        " } ; { print } }' | fmt -s 
 
     echo ""
 
