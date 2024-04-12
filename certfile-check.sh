@@ -8,6 +8,7 @@ cat $1 | awk '
         maininfo="openssl x509 -noout -subject -dates -serial -fingerprint -md5 -ext subjectAltName -issuer"
         keymod="openssl rsa -noout -modulus | md5sum"
         csrmod="openssl req -noout -modulus | md5sum"
+        csrinfo="openssl req -noout -subject"
         crtmod="openssl x509 -noout -modulus | md5sum"
     }
 
@@ -27,6 +28,7 @@ cat $1 | awk '
         out=out RS $0
         printf "CRT REQUEST (modulus|md5): "
         print out | csrmod ; close(csrmod)
+        print out | csrinfo ; close(csrinfo)
         out=""
     }
     /-----END CERTIFICATE-----/ {
