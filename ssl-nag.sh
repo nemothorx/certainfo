@@ -54,10 +54,11 @@ do_analysis() {
                     fi
                 fi
                 ;;
-            Subject:*)  # tag the subject name into dcheck (DNS check list)
-                dcheck="$dcheck,SUBDNS:${line##*=}"
-                dsubj="${line##*=}"
-                ;;
+# Subject checking removed since in the 2020s, only SAN is considered for validity (a TIL in 2024)
+#            Subject:*)  # tag the subject name into dcheck (DNS check list)
+#                dcheck="$dcheck,SUBDNS:${line##*=}"
+#                dsubj="${line##*=}"
+#                ;;
             DNS*)   # tag the san name into the dlist
                 dcheck="$dcheck,$(echo $line | grep DNS | sed -e 's/DNS:/SANDNS:/g ; s/ //g')"
                 ;;
@@ -76,7 +77,7 @@ do_analysis() {
 #       ...and should *.example.com match just "example.com"?
         # strip the subject/san tags for the comparison
         if ( [ "$host" == "${dom#*:}" ] || [ "*.${host#*.}" == "${dom#*:}" ] ) ; then
-            # tag the status with subject/san when it matches
+            # tag the status with SAN when it matches
             namestatus="OK ${dom%:*}"
             break
         fi
@@ -84,9 +85,9 @@ do_analysis() {
     sancnt=$(echo "$dcheck" | tr "," "\n" | grep -c SANDNS)
     case $namestatus in
         # use the status tag to set the appropriate message
-        "OK SUBDNS"*) echo -n "DNS: OK ($host matches Subject: ${dom#*:})" ;;
-        "OK SANDNS"*) echo -n "DNS: OK ($host matches SAN: ${dom#*:})" ;;
-        *) echo -n "DNS: $namestatus ($host NOT in Subject [$dsubj] or SAN [$sancnt entries])" ;;
+#        "OK SUBDNS"*) echo -n "DNS: OK ($host matches Subject: ${dom#*:})" ;;
+        "OK SANDNS"*) echo -n "DNS: OK ($host in SAN: ${dom#*:})" ;;
+        *) echo -n "DNS: $namestatus ($host NOT in SAN [$sancnt entries])" ;;
     esac
 }
 
@@ -106,7 +107,7 @@ while read host ports path content ; do
                 opensslopts="" ;;
         esac
 # todo: should check dates on the whole chain
-        rsltmp=$(timeout 25 openssl s_client -connect $host:$port -servername $host $opensslopts -showcerts </dev/null 2>/dev/null | openssl x509 -noout -text -certopt no_header,no_version,no_serial,no_signame,no_issuer,no_pubkey,no_sigdump -noout 2>/dev/null | grep -E 'Not After :|Subject:|DNS:' | do_analysis)
+        rsltmp=$(timeout 25 openssl s_client -connect $host:$port -servername $host $opensslopts -showcerts </dev/null 2>/dev/null | openssl x509 -noout -text -certopt no_header,no_version,no_serial,no_signame,no_issuer,no_pubkey,no_sigdump -noout 2>/dev/null | grep -E 'Not After :|DNS:' | do_analysis)
         [ -t ] && echo "Checking $host:$port ~ $rsltmp" | do_termcol
         rslt="$rslt
 $host:$port ~ $rsltmp"
