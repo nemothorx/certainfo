@@ -18,7 +18,7 @@ cat $1 | awk '
         next
     }
 
-    /-----END PRIVATE KEY-----/ {
+    /-----END( RSA)? PRIVATE KEY-----/ {
         out=out RS $0
         printf "PRIVATE KEY (modulus|md5): "
         print out | keymod ; close(keymod)
