@@ -1,0 +1,19 @@
+#
+# when parsed, all blank lines are removes, as are all lines with '#' ANYWHERE within them
+# all other lines are parsed, whitespace (any number of) separated in the following fields:
+#
+# - server.host.example.com
+# - ports (multiple comma seperated). "-starttls" will be determined by port. Assume 443 if missing. 
+#
+# NOTE: Further checks are planned, requiring extension to this config format
+#
+# * consider parsing the config lines through `column -t` for readability
+# * Remember when setting up hosts, to add all possible ports/services
+
+# sample config:
+wikipedia.org   
+archive.org     
+kernel.org      
+imap.gmail.com  993
+pop.gmail.com   995
+smtp.gmail.com  465,587
