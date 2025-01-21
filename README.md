@@ -4,7 +4,10 @@ A collection of helper scripts to inspect SSL certificates.
 
 The original idea was to provides information about every certificate in an SSL chain, not just the first (as is `openssl` default)
 
-This repo is constructed from various saved and rescovered-from-backups versions of the scripts. Reconstruction via git-timemachine from my neon-git tools. 
+This repo was originally constructed from various saved and 
+rescovered-from-backups versions of the scripts. 
+
+Reconstruction via git-timemachine from my neon-git tools. 
 
 ----
 
