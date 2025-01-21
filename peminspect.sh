@@ -5,11 +5,11 @@ echo ""
 # multiline capture derived from https://stackoverflow.com/questions/25907394/multi-line-awk-capture
 cat $1 | awk '
     BEGIN {
-        maininfo="openssl x509 -noout -subject -dates -serial -fingerprint -md5 -ext subjectAltName -issuer"
-        keymod="openssl rsa -noout -modulus | md5sum"
-        csrmod="openssl req -noout -modulus | md5sum"
-        csrinfo="openssl req -noout -subject"
+        maininfo="openssl x509 -noout -subject -dates -serial -fingerprint -md5 -ext subjectAltName -issuer 2>/dev/null"
+        csrinfo="openssl req -noout -text 2>/dev/null | grep -i -E \"subject:|DNS:\""
         crtmod="openssl x509 -noout -modulus | md5sum"
+        csrmod="openssl req -noout -modulus 2>/dev/null | md5sum"
+        keymod="openssl rsa -noout -modulus | md5sum"
     }
 
     /-----BEGIN/ {
@@ -26,9 +26,9 @@ cat $1 | awk '
     }
     /-----END CERTIFICATE REQUEST-----/ {
         out=out RS $0
+        print out | csrinfo ; close(csrinfo)
         printf "CRT REQUEST (modulus|md5): "
         print out | csrmod ; close(csrmod)
-        print out | csrinfo ; close(csrinfo)
         out=""
     }
     /-----END CERTIFICATE-----/ {
