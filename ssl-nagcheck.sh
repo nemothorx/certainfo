@@ -2,12 +2,20 @@
 
 # a suggested commandline to sort by date (most critical last), and grouping services with identical expiry date into per-cert groups
 # $0 | grep -A100 CRITICAL: | sort -t'(' -k 2gr,2 | sort -t " " -k3g,3 -s | sed -e 's/   */~/g' | column -t -s~ | cut -c 1-220
+# note: the script's internal sorting output has changed since that command, and some of it may not be needed
+# indeed, this simpler version may be enough:
+# $0 | grep -A100 ^CRITICAL | grep -v ^CRITICAL
+# TODO: fold more of these output tweakings into the script itself
 
 wdays=35        # days under which we go warning
 cdays=14        # days under which we go critical
                     # there is also a hardcoded "SUPER-CRITICAL at 1 day. Its would still be a nagios "CRITICAL"
 
-cfgfile=cfg
+# config file - if there is one in PWD, then set that
+[ -e "ssl-nagcheck.shcfg" ] && cfgfile="ssl-nagcheck.cfg"
+# if there is one in ~/etc/ ...then that takes priority
+[ -e "$HOME/etc/ssl-nagcheck.cfg" ] && cfgfile="$HOME/etc/ssl-nagcheck.cfg"
+# (this so that folks can test against the repo config, but my local test version to work with my personal config, all from the same code)
 
 # this script uses '~' as an output delimiter, mainly so it can be run from the commandline as 
 # $0 | column -t -s~
@@ -25,7 +33,7 @@ fi
 do_termcol() {
     if [ -t ] ; then
         # one sed to add '~' for manual columnnation, and a second for adding colour. This makes tweaking/debugging the two easier
-        cat /dev/stdin | sed -e "s/DNS:/~DNS:/g ; s/EXPIRY:/~EXPIRY:/g" | sed -e "s/OK/${grn}OK${rst}/g ; s/WARNING/${ylw}WARNING${rst}/g ; s/ CRITICAL/ ${red}CRITICAL${rst}/g ; s/UNKNOWN/${mve}UNKNOWN${rst}/g ; s/SUPER-CRITICAL/${red}${rev}SUPER-CRITICAL${rst}/g" | column -t -s~
+        cat /dev/stdin | sed -e "s/DNS:/~DNS:/g ; s/EXPIRY:/~EXPIRY:/g" | sed -e "s/OK/${grn}OK${rst}/g ; s/WARNING/${ylw}WARNING${rst}/g ; s/ CRITICAL/ ${red}CRITICAL${rst}/g ; s/UNKNOWN/${mve}UNKNOWN${rst}/g ; s/SUPER-CRITICAL/${red}${rev}SUPER-CRITICAL${rst}/g" | column -t -s~ | sort -t'(' -k3rn
     else
         cat /dev/stdin
     fi
