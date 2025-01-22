@@ -5,8 +5,8 @@ echo ""
 # multiline capture derived from https://stackoverflow.com/questions/25907394/multi-line-awk-capture
 cat $1 | awk '
     BEGIN {
-        maininfo="openssl x509 -noout -subject -dates -serial -fingerprint -md5 -ext subjectAltName -issuer 2>/dev/null"
-        csrinfo="openssl req -noout -text 2>/dev/null | grep -i -E \"subject:|DNS:\""
+        maininfo="openssl x509 -noout -subject -dates -serial -fingerprint -sha256 -ext subjectAltName -issuer 2>/dev/null"
+        csrinfo="openssl req -noout -text 2>/dev/null | grep -i -o -E \"subject:.*|    DNS:.*\""
         crtmod="openssl x509 -noout -modulus | md5sum"
         csrmod="openssl req -noout -modulus 2>/dev/null | md5sum"
         keymod="openssl rsa -noout -modulus | md5sum"
@@ -42,17 +42,19 @@ cat $1 | awk '
     {
         if (length(out))out=out RS $0
     }
-    '  | awk '
+    ' | sed -e 's/, DNS:/ /g ; s/DNS:/DNS: /g' | awk '
     BEGIN {
-        fmt="fmt -s"
+        fmt="fmt -p \"DNS: \""
     }
     {
-        if ( (!/\.$/) && (!/DNS/) ) {
+        if ( (!/\.$/) && (!/DNS: /) ) {
             printf "        "
         }
-        if (/DNS/) {
-                printf "        " $0 | fmt ; close(fmt)
+        if (/DNS: /) {
+                printf "      " $0 | fmt ; close(fmt)
         } else {
             print
         }
-    }'
+    }' | grep .
+
+
