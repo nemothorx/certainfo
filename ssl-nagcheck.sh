@@ -11,11 +11,12 @@ wdays=35        # days under which we go warning
 cdays=14        # days under which we go critical
                     # there is also a hardcoded "SUPER-CRITICAL at 1 day. Its would still be a nagios "CRITICAL"
 
-# config file - if there is one in PWD, then set that
-[ -e "ssl-nagcheck.cfg" ] && cfgfile="ssl-nagcheck.cfg"
-# if there is one in ~/etc/ ...then that takes priority
+# config file...
+# if there is one in ~/etc/ ...then use that
 [ -e "$HOME/etc/ssl-nagcheck.cfg" ] && cfgfile="$HOME/etc/ssl-nagcheck.cfg"
-# (this so that folks can test against the repo config, but my local test version to work with my personal config, all from the same code)
+# if there is one in PWD, it takes precedent
+[ -e "ssl-nagcheck.cfg" ] && cfgfile="ssl-nagcheck.cfg"
+# (this so the script can be tested against the default config provided in the repo without anyone needing to install anything)
 
 [ -z "$cfgfile" ] && echo "No config file found. Expected ssl-nagcheck.cfg in PWD or \$HOME/etc" && exit 2
 
@@ -134,11 +135,12 @@ while read host ports uripath content ; do
         # TODO: this should handle non-443 ports better (check for smtp/imap/etc banner?)
         if [ -n "$content" ] ; then
             case $port in
-                110) checkout=$(curl -s -k -D - -tls pop3://$host:$port/) ;;
-                143) checkout=$(curl -s -k -D - -tls imap://$host:$port/) ;;
-                993) checkout=$(curl -s -k -D - imaps://$host:$port/) ;;
-                995) checkout=$(curl -s -k -D - pop3s://$host:$port/) ;;
                 25|587) checkout=$(curl -s -k -D - -tls smtp://$host:$port/) ;;
+                110)    checkout=$(curl -s -k -D - -tls pop3://$host:$port/) ;;
+                143)    checkout=$(curl -s -k -D - -tls imap://$host:$port/) ;;
+                465)    checkout=$(curl -s -k -D - smtps://$host:$port/) ;;
+                993)    checkout=$(curl -s -k -D - imaps://$host:$port/) ;;
+                995)    checkout=$(curl -s -k -D - pop3s://$host:$port/) ;;
                 *)
                     # note: the slash expected between port and uripath...
                     # ...is in the uripath field.
