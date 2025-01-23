@@ -131,7 +131,10 @@ while read host ports uripath content ; do
         rsltmp=$(timeout 25 openssl s_client -connect $host:$port -servername $host $opensslopts -showcerts </dev/null 2>/dev/null | openssl x509 -noout -text -serial -certopt no_header,no_version,no_serial,no_signame,no_issuer,no_pubkey,no_sigdump -noout 2>/dev/null | grep -E 'Not After :|DNS:|serial=' | do_analysis)
         # TODO: this should handle non-443 ports better (check for smtp/imap/etc banner?)
         if [ -n "$content" ] ; then
-            curl -s -k -L --connect-timeout 2 -m 5 https://$host:$port/$uripath | grep -q "$content" && contmp="DATA: OK" || contmp="DATA: CRITICAL"
+            # note: the slash expected between port and uripath is in the uripath field.
+            # ...because most will be / and the cfg needs a value there
+            # ...and I can't have it in both because some embedded servers barf with an error on a double slash, ie, $host:$port//$uripath
+            curl -s -k -L --connect-timeout 2 -m 5 https://$host:$port$uripath | grep -q "$content" && contmp="DATA: OK" || contmp="DATA: CRITICAL"
         else
             contmp="DATA: N/A"
         fi
