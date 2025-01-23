@@ -35,12 +35,9 @@ Note: The target names in this repo should follow the following scheme
   - minimum filesize for quick-and-dirty copypasta to remote systems
 - ssl-nagcheck.sh - nagios compatible check of all relevant things
   - SSL based check. validate the following: 
-    - DNS of server resolves (ignore if reading PEM file with chain)
-    - CERT validity servername against SAN entries
-    - CERT and CHAIN validity of dates
-    - CHAIN validity - cert links to intermediate, etc
-    - LOCAL TRUST validity - validate that the chain links to a local trust
-  - http content check if a server
-    - http -> 301 to https?
-    - load a deep URI and look for specific CONTENT
-  - Note that most of these are TODO/wishlist items
+    - DNS of server resolves (ignore if reading PEM file with chain) (TODO)
+    - CERT and CHAIN validity of dates (TODO for chain)
+    - CERT validity of servername against SAN entries
+    - CHAIN/LOCAL TRUST validity - cert links through intermediates to a local trust (TODO)
+    - CONTENT check
+      - maybe also a http 301 -> https redirect check?
