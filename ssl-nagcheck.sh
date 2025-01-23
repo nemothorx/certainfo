@@ -12,10 +12,12 @@ cdays=14        # days under which we go critical
                     # there is also a hardcoded "SUPER-CRITICAL at 1 day. Its would still be a nagios "CRITICAL"
 
 # config file - if there is one in PWD, then set that
-[ -e "ssl-nagcheck.shcfg" ] && cfgfile="ssl-nagcheck.cfg"
+[ -e "ssl-nagcheck.cfg" ] && cfgfile="ssl-nagcheck.cfg"
 # if there is one in ~/etc/ ...then that takes priority
 [ -e "$HOME/etc/ssl-nagcheck.cfg" ] && cfgfile="$HOME/etc/ssl-nagcheck.cfg"
 # (this so that folks can test against the repo config, but my local test version to work with my personal config, all from the same code)
+
+[ -z "$cfgfile" ] && echo "No config file found. Expected ssl-nagcheck.cfg in PWD or \$HOME/etc" && exit 2
 
 # this script uses '~' as an output delimiter, mainly so it can be run from the commandline as 
 # $0 | column -t -s~
@@ -131,10 +133,21 @@ while read host ports uripath content ; do
         rsltmp=$(timeout 25 openssl s_client -connect $host:$port -servername $host $opensslopts -showcerts </dev/null 2>/dev/null | openssl x509 -noout -text -serial -certopt no_header,no_version,no_serial,no_signame,no_issuer,no_pubkey,no_sigdump -noout 2>/dev/null | grep -E 'Not After :|DNS:|serial=' | do_analysis)
         # TODO: this should handle non-443 ports better (check for smtp/imap/etc banner?)
         if [ -n "$content" ] ; then
-            # note: the slash expected between port and uripath is in the uripath field.
-            # ...because most will be / and the cfg needs a value there
-            # ...and I can't have it in both because some embedded servers barf with an error on a double slash, ie, $host:$port//$uripath
-            curl -s -k -L --connect-timeout 2 -m 5 https://$host:$port$uripath | grep -q "$content" && contmp="DATA: OK" || contmp="DATA: CRITICAL"
+            case $port in
+                110) checkout=$(curl -s -k -D - -tls pop3://$host:$port/) ;;
+                143) checkout=$(curl -s -k -D - -tls imap://$host:$port/) ;;
+                993) checkout=$(curl -s -k -D - imaps://$host:$port/) ;;
+                995) checkout=$(curl -s -k -D - pop3s://$host:$port/) ;;
+                25|587) checkout=$(curl -s -k -D - -tls smtp://$host:$port/) ;;
+                *)
+                    # note: the slash expected between port and uripath...
+                    # ...is in the uripath field.
+                    # ...because most will be "/" and the cfg needs a value in that field position
+                    # ...and I can't have it in both because some embedded servers barf with an error on a double slash, ie, https://$host:$port//$uripath
+
+                    checkout=$(curl -s -k -L --connect-timeout 2 -m 5 https://$host:$port$uripath) ;;
+            esac
+            echo "$checkout" | grep -q "$content" && contmp="DATA: OK" || contmp="DATA: CRITICAL"
         else
             contmp="DATA: N/A"
         fi
@@ -142,7 +155,7 @@ while read host ports uripath content ; do
         rslt="$rslt
 $host:$port ~ $rsltmp ~ $contmp"
     done < <(echo "$ports" | tr "," "\n" )
-done < <(cat $cfgfile | grep $filter | grep -v '#')
+done < <(cat $cfgfile | grep $filter | sed -e 's/#.*//g' | grep -v '^\s*$')
 
 [ -t ] && echo ""
 
