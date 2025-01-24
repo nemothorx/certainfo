@@ -11,6 +11,9 @@ wdays=35        # days under which we go warning
 cdays=14        # days under which we go critical
                     # there is also a hardcoded "SUPER-CRITICAL at 1 day. Its would still be a nagios "CRITICAL"
 
+# curl options I want to use globally
+curlopts="-s -k --connect-timeout 2 -m 5 -w \n\n%{response_code}"
+
 # config file...
 # if there is one in ~/etc/ ...then use that
 [ -e "$HOME/etc/ssl-nagcheck.cfg" ] && cfgfile="$HOME/etc/ssl-nagcheck.cfg"
@@ -120,7 +123,9 @@ do_analysis() {
 filter=${1:-.}
 [ -t ] && echo "Terminal detected. Verbose output. Filtering by $filter"
 while read host ports uripath content ; do
+    origcontent=$content # make a copy of content, since if we're checking multiple ports AND expect custom error codes, then we alter the value of $content within the next loop. So within the next loop we need to reset it each time
     while read port ; do
+        content=$origcontent    # reset $content as per above reasoning
         case $port in
             25) opensslopts="-starttls smtp" ;;
             110) opensslopts="-starttls pop3" ;;
@@ -135,21 +140,42 @@ while read host ports uripath content ; do
         # TODO: this should handle non-443 ports better (check for smtp/imap/etc banner?)
         if [ -n "$content" ] ; then
             case $port in
-                25|587) checkout=$(curl -s -k -D - -tls smtp://$host:$port/) ;;
-                110)    checkout=$(curl -s -k -D - -tls pop3://$host:$port/) ;;
-                143)    checkout=$(curl -s -k -D - -tls imap://$host:$port/) ;;
-                465)    checkout=$(curl -s -k -D - smtps://$host:$port/) ;;
-                993)    checkout=$(curl -s -k -D - imaps://$host:$port/) ;;
-                995)    checkout=$(curl -s -k -D - pop3s://$host:$port/) ;;
+                25|587) checkout=$(curl $curlopts -D - -tls smtp://$host:$port/ -X quit) ;;
+                110)    checkout=$(curl $curlopts -D - -tls pop3://$host:$port/ -X quit) ;;
+                143)    checkout=$(curl $curlopts -D - -tls imap://$host:$port/ -X logout) ;;
+                465)    checkout=$(curl $curlopts -D - smtps://$host:$port/ -X quit) ;;
+                993)    checkout=$(curl $curlopts -D - imaps://$host:$port/ -X logout) ;;
+                995)    checkout=$(curl $curlopts -D - pop3s://$host:$port/ -X quit) ;;
                 *)
                     # note: the slash expected between port and uripath...
                     # ...is in the uripath field.
                     # ...because most will be "/" and the cfg needs a value in that field position
                     # ...and I can't have it in both because some embedded servers barf with an error on a double slash, ie, https://$host:$port//$uripath
 
-                    checkout=$(curl -s -k -L --connect-timeout 2 -m 5 https://$host:$port$uripath) ;;
+                    checkout=$(curl $curlopts -L https://$host:$port$uripath) ;;
             esac
-            echo "$checkout" | grep -q "$content" && contmp="DATA: OK" || contmp="DATA: CRITICAL"
+            # TODO: we should detect if the curl timed out (exit code 28) and return... unknown? warning? critical?
+            # reviewing content: find response code first. 
+            responsecode=$(echo "$checkout" | tail -n 1)
+            # check if we handle it - we can specify a target response code in the firts : seperated sub-field of the target content check
+            if [ "${responsecode}" == "${content%%:*}" ] ; then
+                # if it passes, rewrite response code and checkout strings for the next check
+                responsecode=200
+                content=${content#*:}
+            fi
+
+            case $responsecode in 
+                # success = 2xx for https and smtp success, and "000" for imap/pop 
+                2*|000)
+                    echo "$checkout" | grep -q "$content" && contmp="DATA: OK" || contmp="DATA: CRITICAL (string not found)"
+                    ;;
+                *)
+                    # any other response code we treat as an error
+                    contmp="DATA: CRITICAL ($responsecode)"
+                    # TODO: it might be nice to better indicate in the output which path this was 404'ing on, since we may be checking multiple and currently do not distinguish
+                    # ...however, not solving that now, since content checking is already a stretch feature to this script
+                    ;;
+            esac
         else
             contmp="DATA: N/A"
         fi
@@ -163,7 +189,7 @@ done < <(cat $cfgfile | grep $filter | sed -e 's/#.*//g' | grep -v '^\s*$')
 
 rsltfinal=$(echo "$rslt" | grep .)
 
-# final bit
+# final summarise
 count=$(echo "$rsltfinal" | wc -l)
 critcount=$(echo "$rsltfinal" | grep -c "CRITICAL")
 warncount=$(echo "$rsltfinal" | grep -v "CRITICAL" | grep -c "WARNING")
