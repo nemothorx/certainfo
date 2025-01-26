@@ -38,8 +38,11 @@ fi
 
 do_termcol() {
     if [ -t ] ; then
-        # one sed to add '~' for manual columnnation, and a second for adding colour. This makes tweaking/debugging the two easier
-        cat /dev/stdin | sed -e "s/DNS:/~DNS:/g ; s/EXPIRY:/~EXP:/g" | sed -e "s/OK/${grn}OK${rst}/g ; s/WARNING/${ylw}WARNING${rst}/g ; s/ CRITICAL/ ${red}CRITICAL${rst}/g ; s/UNKNOWN/${mve}UNKNOWN${rst}/g ; s/SUPER-CRITICAL/${red}${rev}SUPER-CRITICAL${rst}/g" | column -t -s~ | sort -t'(' -k3rn
+        # one sed to add '~' for manual columnnation, 
+        # ...then the column and sorting
+        # and a second sed for adding colour at the end
+        # (makes debugging easier, and colours before column can be weird)
+        cat /dev/stdin | sed -e "s/DNS:/~DNS:/g ; s/EXPIRY:/~EXP:/g" | column -t -s~ | sort -t'(' -k2rn | sed -e "s/OK/${grn}OK${rst}/g ; s/WARNING/${ylw}WARNING${rst}/g ; s/ CRITICAL/ ${red}CRITICAL${rst}/g ; s/UNKNOWN/${mve}UNKNOWN${rst}/g ; s/SUPER-CRITICAL/${red}${rev}SUPER-CRITICAL${rst}/g"
     else
         cat /dev/stdin
     fi
@@ -136,7 +139,13 @@ while read host ports uripath content ; do
                 opensslopts="" ;;
         esac
 # todo: should check dates on the whole chain
-        rsltmp=$(timeout 25 openssl s_client -connect $host:$port -servername $host $opensslopts -showcerts </dev/null 2>/dev/null | openssl x509 -noout -text -serial -certopt no_header,no_version,no_serial,no_signame,no_issuer,no_pubkey,no_sigdump -noout 2>/dev/null | grep -E 'Not After :|DNS:|serial=' | do_analysis)
+        # second round of doing things by port, this time 80 vs all others
+        case $port in
+            80) rsltmp="S/N: N/AEXPIRY: N/ADNS: N/A" ;;
+            *)
+                rsltmp=$(timeout 25 openssl s_client -connect $host:$port -servername $host $opensslopts -showcerts </dev/null 2>/dev/null | openssl x509 -noout -text -serial -certopt no_header,no_version,no_serial,no_signame,no_issuer,no_pubkey,no_sigdump -noout 2>/dev/null | grep -E 'Not After :|DNS:|serial=' | do_analysis)
+                ;;
+        esac
         # TODO: this should handle non-443 ports better (check for smtp/imap/etc banner?)
         if [ -n "$content" ] ; then
             case $port in
@@ -146,6 +155,7 @@ while read host ports uripath content ; do
                 465)    checkout=$(curl $curlopts -D - smtps://$host:$port/ -X quit) ;;
                 993)    checkout=$(curl $curlopts -D - imaps://$host:$port/ -X logout) ;;
                 995)    checkout=$(curl $curlopts -D - pop3s://$host:$port/ -X quit) ;;
+                80)     checkout=$(curl $curlopts -D - http://$host:$port$uripath) ;;
                 *)
                     # note: the slash expected between port and uripath...
                     # ...is in the uripath field.

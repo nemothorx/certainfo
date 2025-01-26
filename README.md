@@ -37,4 +37,4 @@ Note: The target names in this repo should follow the following scheme
     - CERT validity of servername against SAN entries
     - CHAIN/LOCAL TRUST validity - cert links through intermediates to a local trust (TODO)
     - CONTENT check
-      - maybe also a http 301 -> https redirect check?
+  - can also check port 80 (non-SSL) content, mainly with "is it redirecting as desired?" in mind, but not limited to that
