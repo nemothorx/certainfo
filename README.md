@@ -21,7 +21,6 @@ Note: The target names in this repo should follow the following scheme
 
 ## sslchain-info.sh
 - network-focused crt/key inspector
-- Original awk core obtained from an online reference (likely stackoverflow or similar). Details now lost to history 
 
 ## peminspect.sh
 - no network MAXimal inspector of crt/key/csrs in a pem file

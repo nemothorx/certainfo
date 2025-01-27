@@ -50,6 +50,8 @@ do_chainget() {
       /BEGIN CERT/ { count++ ; printf count".\n" }
       /^-+BEGIN CERT/,/^-+END CERT/ { print | pipe }
       /^-+END CERT/                 { close(pipe)  }'
+      # I believe the above awk core originated in this code from mr.spuratic
+      # https://serverfault.com/questions/541262/checking-the-issued-and-expiry-dates-for-the-certificates-involved-a-certificate
 }
 
 
