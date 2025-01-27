@@ -7,6 +7,41 @@
 # $0 | grep -A100 ^CRITICAL | grep -v ^CRITICAL
 # TODO: fold more of these output tweakings into the script itself
 
+case "$1" in
+    -h|--help)
+        echo "
+# ssl-nagcheck.sh is a SSL cert check script. Exit code is nagios compatible.
+
+It will search for a config files in:
+  - \$HOME/etc/ssl-nagcheck.cfg 
+  - \$PWD (this takes priority)
+
+Config can just be a list of hostnames. Optionally also:
+  - specify port
+  - specify URI path
+  - specity content to test for
+
+See config that should have accompanied this script for more details/examples
+
+Any port can be specified. If none specified, defaults to 443
+
+All ports will be connected as SSL with the following exceptions
+  - 25/587 = starttls smtp
+  - 110 = starttls pop3
+  - 143 = starttls imap
+  - 80 = no TLS/SSL. Content check only. 
+
+Content checks assume http(s) for all ports except the following:
+  - 25/465/587 = smtp banner
+  - 110/995 = pop3 banner
+  - 143/993 = imap banner
+"
+        exit 0
+        ;;
+esac
+
+
+
 wdays=35        # days under which we go warning
 cdays=14        # days under which we go critical
                     # there is also a hardcoded "SUPER-CRITICAL at 1 day. Its would still be a nagios "CRITICAL"
