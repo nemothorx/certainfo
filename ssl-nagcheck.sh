@@ -197,7 +197,7 @@ while read host ports uripath content ; do
                     # ...because most will be "/" and the cfg needs a value in that field position
                     # ...and I can't have it in both because some embedded servers barf with an error on a double slash, ie, https://$host:$port//$uripath
 
-                    checkout=$(curl $curlopts -L https://$host:$port$uripath) ;;
+                    checkout=$(curl $curlopts -D - -L https://$host:$port$uripath) ;;
             esac
             # TODO: we should detect if the curl timed out (exit code 28) and return... unknown? warning? critical?
             # reviewing content: find response code first. 
