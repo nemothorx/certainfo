@@ -239,7 +239,7 @@ count=$(echo "$rsltfinal" | wc -l)
 critcount=$(echo "$rsltfinal" | grep -c "CRITICAL")
 warncount=$(echo "$rsltfinal" | grep -v "CRITICAL" | grep -c "WARNING")
 unkcount=$(echo "$rsltfinal" | grep -v "CRITICAL" | grep -v "WARNING" | grep -c "UNKNOWN")
-echo "$rsltfinal" | grep -q CRITICAL && echo "CRITICAL: Performed $count SSL checks. Issues: CRIT:$critcount,WARN:$warncount,UNK:$unkcount" && echo "$rsltfinal" | grep -E 'CRITICAL|WARNING|UNKNOWN' | do_termcol && exit 2
+echo "$rsltfinal" | grep -q CRITICAL && echo "CRITICAL: Performed $count checks. Issues: CRIT:$critcount,WARN:$warncount,UNK:$unkcount" && echo "$rsltfinal" | grep -E 'CRITICAL|WARNING|UNKNOWN' | do_termcol && exit 2
 echo "$rsltfinal" | grep -q WARNING && echo "WARNING: Performed $count SSL checks:: WARN:$warncount,UNK:$unkcount issues:" && echo "$rsltfinal" | grep -E 'CRITICAL|WARNING|UNKNOWN' | do_termcol && exit 1
 echo "$rsltfinal" | grep -q UNKNOWN && echo "UNKNOWN: Performed $count SSL checks:: UNK:$unkcount issues:" && echo "$rsltfinal" | grep -E 'CRITICAL|WARNING|UNKNOWN' | do_termcol && exit 3
 

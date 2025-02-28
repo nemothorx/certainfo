@@ -19,7 +19,7 @@ Note: The target names in this repo should follow the following scheme
 
 # The scripts in this repo are / planned to be:
 
-## sslchain-info.sh
+## ssl-chaininfo.sh
 - network-focused crt/key inspector
 
 ## peminspect.sh
