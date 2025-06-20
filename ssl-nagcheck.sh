@@ -200,7 +200,7 @@ while read host ports uripath content ; do
                     checkout=$(curl $curlopts -D - -L https://$host:$port$uripath) ;;
             esac
             # TODO: we should detect if the curl timed out (exit code 28) and return... unknown? warning? critical?
-            # reviewing content: find response code first. 
+            # reviewing content: find response code first. (refer to $curlopts for why it's on the last line alone)
             responsecode=$(echo "$checkout" | tail -n 1)
             # check if we handle it - we can specify a target response code in the firts : seperated sub-field of the target content check
             if [ "${responsecode}" == "${content%%:*}" ] ; then
